@@ -1,0 +1,161 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Dashboard - Smart Library</title>
+    <link rel="stylesheet" href="/static/css/style.css" />
+    <script src="/static/js/script.js" defer></script>
+  </head>
+  <body>
+    <div class="navbar">
+      <div class="nav-left">
+        <div class="brand">Smart Library</div>
+        <div class="nav-links">
+          <a href="/dashboard" class="{% if request.path.startswith('/dashboard') %}active{% endif %}">Dashboard</a>
+          <a href="/books" class="{% if request.path.startswith('/books') or request.path.startswith('/book') %}active{% endif %}">Books</a>
+          <a href="/profile" class="{% if request.path.startswith('/profile') %}active{% endif %}">Profile</a>
+          {% if session.role == "Admin" %}
+          <a href="/admin" class="{% if request.path.startswith('/admin') %}active{% endif %}">Admin</a>
+          {% endif %}
+        </div>
+      </div>
+      <div class="nav-right">
+        <div class="small">Welcome, <strong>{{ session.username }}</strong></div>
+        <a class="btn light" href="/logout">Logout</a>
+      </div>
+    </div>
+
+    <div class="container">
+      {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        {% set cat = messages[0][0] %}
+        {% set msg = messages[0][1] %}
+        <div class="alert {{ cat }}"><strong>{{ msg }}</strong></div>
+      {% endif %}
+      {% endwith %}
+
+      <div class="row">
+        <h2 class="title">Dashboard</h2>
+        <a class="btn primary" href="/books">Browse All Books</a>
+      </div>
+
+      <div class="stats">
+        <div class="stat-card lift">
+          <div class="muted">Total Books</div>
+          <div class="stat-num">{{ total_books }}</div>
+        </div>
+        <div class="stat-card lift">
+          <div class="muted">Issued Books</div>
+          <div class="stat-num">{{ issued_books }}</div>
+        </div>
+        <div class="stat-card lift">
+          <div class="muted">Available Books</div>
+          <div class="stat-num">{{ available_books }}</div>
+        </div>
+      </div>
+
+      <div class="section">
+        <div class="card">
+          <div class="row">
+            <div>
+              <strong>Categories</strong>
+              <div class="muted">Quick filter</div>
+            </div>
+          </div>
+          <div style="margin-top: 10px; display: flex; flex-wrap: wrap; gap: 8px;">
+            {% for c in categories %}
+              <a class="pill" href="/books?category={{ c }}">{{ c }}</a>
+            {% endfor %}
+          </div>
+        </div>
+      </div>
+
+      <div class="section">
+        <div class="card">
+          <div class="row">
+            <div>
+              <strong>Top Issued Books</strong>
+              <div class="muted">Based on issue_count</div>
+            </div>
+          </div>
+
+          <div class="grid" style="margin-top: 12px;">
+            {% for b in top_books %}
+              <a class="card lift" href="/book/{{ b.book_id }}" style="padding: 12px;">
+                <div class="book-card">
+                  <img class="book-cover" src="{{ b.cover_image }}" alt="cover" />
+                  <div>
+                    <p class="book-title">{{ b.title }}</p>
+                    <p class="muted">{{ b.author }}</p>
+                    <p class="muted">Issued: {{ b.issue_count }}</p>
+                  </div>
+                </div>
+              </a>
+            {% endfor %}
+          </div>
+        </div>
+      </div>
+
+      <div class="section">
+        <div class="card">
+          <div class="row">
+            <div>
+              <strong>Your Active Issued Books</strong>
+              <div class="muted">Return in 7 days (default)</div>
+            </div>
+            <a class="btn light" href="/profile">View Full Profile</a>
+          </div>
+
+          {% if issued|length == 0 %}
+            <p class="muted" style="margin-top: 10px;">No books issued right now.</p>
+          {% else %}
+            <table class="table" style="margin-top: 10px;">
+              <thead>
+                <tr>
+                  <th>Book</th>
+                  <th>Issue Date</th>
+                  <th>Return Date</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for x in issued %}
+                <tr>
+                  <td><a href="/book/{{ x.book_id }}"><strong>{{ x.title }}</strong></a><div class="muted">{{ x.author }}</div></td>
+                  <td>{{ x.issue_date }}</td>
+                  <td>{{ x.return_date }}</td>
+                  <td>
+                    <span class="pill good">Issued</span>
+                  </td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+            <p class="muted small" style="margin-top: 8px;">
+              Note: Late Return is shown on Profile page using today's date.
+            </p>
+          {% endif %}
+        </div>
+      </div>
+
+      <div class="section">
+        <div class="card">
+          <strong>FAQ Chatbot (Simple)</strong>
+          <div class="muted">Try: "How to issue book?" or "Return policy?"</div>
+
+          <div id="chatLog" class="chat-log" style="margin-top: 10px;"></div>
+          <div class="chatbox">
+            <input id="chatInput" placeholder="Ask a question..." />
+            <button id="chatSend" class="btn primary" type="button">Send</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="footer">
+        Smart Library System | Student Project
+      </div>
+    </div>
+  </body>
+</html>
+

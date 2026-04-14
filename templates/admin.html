@@ -1,0 +1,238 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Admin - Smart Library</title>
+    <link rel="stylesheet" href="/static/css/style.css" />
+    <script src="/static/js/script.js" defer></script>
+  </head>
+  <body>
+    <div class="navbar">
+      <div class="nav-left">
+        <div class="brand">Smart Library</div>
+        <div class="nav-links">
+          <a href="/dashboard" class="{% if request.path.startswith('/dashboard') %}active{% endif %}">Dashboard</a>
+          <a href="/books" class="{% if request.path.startswith('/books') or request.path.startswith('/book') %}active{% endif %}">Books</a>
+          <a href="/profile" class="{% if request.path.startswith('/profile') %}active{% endif %}">Profile</a>
+          <a href="/admin" class="{% if request.path.startswith('/admin') %}active{% endif %}">Admin</a>
+        </div>
+      </div>
+      <div class="nav-right">
+        <div class="small">Admin: <strong>{{ session.username }}</strong></div>
+        <a class="btn light" href="/logout">Logout</a>
+      </div>
+    </div>
+
+    <div class="container">
+      {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        {% set cat = messages[0][0] %}
+        {% set msg = messages[0][1] %}
+        <div class="alert {{ cat }}"><strong>{{ msg }}</strong></div>
+      {% endif %}
+      {% endwith %}
+
+      <h2 class="title">Admin Panel</h2>
+
+      <div class="grid" style="grid-template-columns: repeat(3, 1fr);">
+        <div class="card">
+          <div class="muted">Total Books</div>
+          <div style="font-size: 28px; font-weight: 800;">{{ total_books }}</div>
+        </div>
+        <div class="card">
+          <div class="muted">Total Users</div>
+          <div style="font-size: 28px; font-weight: 800;">{{ total_users }}</div>
+        </div>
+        <div class="card">
+          <div class="muted">Currently Issued</div>
+          <div style="font-size: 28px; font-weight: 800;">{{ total_issued }}</div>
+        </div>
+      </div>
+
+      <div class="section">
+        <div class="card">
+          <strong>Add New Book</strong>
+          <form method="post" action="/admin/book/add" style="margin-top: 10px;">
+            <div class="form-row">
+              <div class="form-group">
+                <label class="small">Title</label>
+                <input name="title" required />
+              </div>
+              <div class="form-group">
+                <label class="small">Author</label>
+                <input name="author" required />
+              </div>
+            </div>
+            <div class="form-row">
+              <div class="form-group">
+                <label class="small">Category</label>
+                <input name="category" placeholder="e.g. Science" required />
+              </div>
+              <div class="form-group">
+                <label class="small">Cover Image URL</label>
+                <input name="cover_image" placeholder="https://covers.openlibrary.org/b/isbn/ISBN-M.jpg" required />
+              </div>
+            </div>
+            <div class="form-row">
+              <div class="form-group">
+                <label class="small">Description</label>
+                <textarea name="description" required></textarea>
+              </div>
+              <div class="form-group">
+                <label class="small">Summary (for AI feature)</label>
+                <textarea name="summary" required></textarea>
+              </div>
+            </div>
+            <button class="btn primary" type="submit">Add Book</button>
+          </form>
+        </div>
+      </div>
+
+      <div class="section">
+        <div class="card">
+          <div class="row">
+            <strong>Issued Books (Active)</strong>
+            <span class="muted small">Shows currently issued books</span>
+          </div>
+          {% if issued|length == 0 %}
+            <p class="muted" style="margin-top: 10px;">No active issued books.</p>
+          {% else %}
+            <table class="table" style="margin-top: 10px;">
+              <thead>
+                <tr>
+                  <th>User</th>
+                  <th>Book</th>
+                  <th>Issue Date</th>
+                  <th>Return Date</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for x in issued %}
+                <tr>
+                  <td>{{ x.username }}</td>
+                  <td>{{ x.title }}</td>
+                  <td>{{ x.issue_date }}</td>
+                  <td>{{ x.return_date }}</td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          {% endif %}
+        </div>
+      </div>
+
+      <div class="section">
+        <div class="card">
+          <div class="row">
+            <strong>All Users</strong>
+            <span class="muted small">User list</span>
+          </div>
+          <table class="table" style="margin-top: 10px;">
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Username</th>
+                <th>Role</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for u in users %}
+              <tr>
+                <td>{{ u.id }}</td>
+                <td>{{ u.username }}</td>
+                <td>{{ u.role }}</td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="section">
+        <div class="card">
+          <div class="row">
+            <strong>Manage Books (Latest 80)</strong>
+            <span class="muted small">Edit/Delete</span>
+          </div>
+
+          {% if books|length == 0 %}
+            <p class="muted" style="margin-top: 10px;">No books found.</p>
+          {% else %}
+            {% for b in books %}
+              <div class="card" style="margin-top: 12px;">
+                <div class="row">
+                  <div style="display: flex; gap: 10px; align-items: center;">
+                    <img class="book-cover" src="{{ b.cover_image }}" alt="cover" />
+                    <div>
+                      <div><strong>#{{ b.book_id }}</strong> - {{ b.title }}</div>
+                      <div class="muted">{{ b.author }} • {{ b.category }}</div>
+                      <div style="margin-top: 6px;">
+                        {% if b.availability == "Yes" %}
+                          <span class="pill good">Available</span>
+                        {% else %}
+                          <span class="pill bad">Not Available</span>
+                        {% endif %}
+                        <span class="pill">Issued: {{ b.issue_count }}</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <form method="post" action="/admin/book/delete/{{ b.book_id }}">
+                    <button class="btn danger" type="submit">Delete</button>
+                  </form>
+                </div>
+
+                <form method="post" action="/admin/book/edit/{{ b.book_id }}" style="margin-top: 10px;">
+                  <div class="form-row">
+                    <div class="form-group">
+                      <label class="small">Title</label>
+                      <input name="title" value="{{ b.title }}" required />
+                    </div>
+                    <div class="form-group">
+                      <label class="small">Author</label>
+                      <input name="author" value="{{ b.author }}" required />
+                    </div>
+                  </div>
+                  <div class="form-row">
+                    <div class="form-group">
+                      <label class="small">Category</label>
+                      <input name="category" value="{{ b.category }}" required />
+                    </div>
+                    <div class="form-group">
+                      <label class="small">Availability</label>
+                      <select name="availability">
+                        <option value="Yes" {% if b.availability == "Yes" %}selected{% endif %}>Yes</option>
+                        <option value="No" {% if b.availability == "No" %}selected{% endif %}>No</option>
+                      </select>
+                    </div>
+                  </div>
+                  <div class="form-row">
+                    <div class="form-group">
+                      <label class="small">Cover Image URL</label>
+                      <input name="cover_image" value="{{ b.cover_image }}" required />
+                    </div>
+                    <div class="form-group">
+                      <label class="small">Summary</label>
+                      <textarea name="summary" required>{{ b.summary }}</textarea>
+                    </div>
+                  </div>
+                  <div class="form-group">
+                    <label class="small">Description</label>
+                    <textarea name="description" required>{{ b.description }}</textarea>
+                  </div>
+                  <button class="btn primary" type="submit">Save Changes</button>
+                </form>
+              </div>
+            {% endfor %}
+          {% endif %}
+        </div>
+      </div>
+
+      <div class="footer">
+        Smart Library System | Student Project
+      </div>
+    </div>
+  </body>
+</html>
+

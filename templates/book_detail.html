@@ -1,0 +1,180 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{{ book.title }} - Smart Library</title>
+    <link rel="stylesheet" href="/static/css/style.css" />
+    <script src="/static/js/script.js" defer></script>
+  </head>
+  <body>
+    <div class="navbar">
+      <div class="nav-left">
+        <div class="brand">Smart Library</div>
+        <div class="nav-links">
+          <a href="/dashboard" class="{% if request.path.startswith('/dashboard') %}active{% endif %}">Dashboard</a>
+          <a href="/books" class="{% if request.path.startswith('/books') or request.path.startswith('/book') %}active{% endif %}">Books</a>
+          <a href="/profile" class="{% if request.path.startswith('/profile') %}active{% endif %}">Profile</a>
+          {% if session.role == "Admin" %}
+          <a href="/admin" class="{% if request.path.startswith('/admin') %}active{% endif %}">Admin</a>
+          {% endif %}
+        </div>
+      </div>
+      <div class="nav-right">
+        <div class="small"><strong>{{ session.username }}</strong></div>
+        <a class="btn light" href="/logout">Logout</a>
+      </div>
+    </div>
+
+    <div class="container">
+      {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        {% set cat = messages[0][0] %}
+        {% set msg = messages[0][1] %}
+        <div class="alert {{ cat }}"><strong>{{ msg }}</strong></div>
+      {% endif %}
+      {% endwith %}
+
+      <div class="card">
+        <div class="book-container">
+          <div class="book-left">
+            <img class="book-cover-big book-cover" src="{{ book.cover_image }}" alt="cover" />
+          </div>
+          <div class="book-right">
+            <h2 class="book-title-big">{{ book.title }}</h2>
+            <p class="muted" style="margin: 0 0 10px;">by {{ book.author }}</p>
+            <div style="display:flex; gap:8px; flex-wrap:wrap; align-items:center;">
+              <span class="pill">{{ book.category }}</span>
+              {% if book.availability == "Yes" %}
+                <span class="pill good">Available</span>
+              {% else %}
+                <span class="pill bad">Not Available</span>
+              {% endif %}
+              <span class="pill">Issued: {{ book.issue_count }}</span>
+            </div>
+
+            {% if my_issue %}
+              <div class="muted" style="margin-top: 12px;">
+                Your Return Date: <strong>{{ my_issue.return_date }}</strong>
+              </div>
+              {% if today > my_issue.return_date %}
+                <div class="pill bad" style="margin-top: 8px;">Late Return</div>
+              {% else %}
+                <div class="pill good" style="margin-top: 8px;">On Time</div>
+              {% endif %}
+            {% endif %}
+
+            <div class="book-actions">
+              <button id="summaryBtn" class="btn secondary-btn" type="button" data-summary="{{ book.summary|tojson }}">
+                View Summary
+              </button>
+
+              {% if my_issue %}
+                <form method="post" action="/return/{{ book.book_id }}" style="margin:0;">
+                  <button class="btn danger primary-btn" type="submit">Return Book</button>
+                </form>
+              {% else %}
+                <form method="post" action="/issue/{{ book.book_id }}" style="margin:0;">
+                  <button class="btn primary primary-btn" type="submit" {% if book.availability != "Yes" %}disabled{% endif %}>
+                    Issue Book
+                  </button>
+                </form>
+              {% endif %}
+
+              <a class="btn light" href="/books">Back</a>
+            </div>
+          </div>
+        </div>
+
+        <div class="section">
+          <strong>Description</strong>
+          <p class="muted" style="margin-top: 8px;">{{ book.description }}</p>
+        </div>
+      </div>
+
+      <div class="section">
+        <div class="card">
+          <div class="row">
+            <strong>Reviews</strong>
+            <span class="muted small">Keep it short (1–2 lines)</span>
+          </div>
+
+          <form method="post" action="/review/{{ book.book_id }}" style="margin-top: 10px;">
+            <div class="form-group">
+              <input name="review" placeholder="Write your review..." maxlength="120" required />
+            </div>
+            <button class="btn primary" type="submit">Add Review</button>
+          </form>
+
+          <div style="margin-top: 12px;">
+            {% if reviews|length == 0 %}
+              <p class="muted">No reviews yet.</p>
+            {% else %}
+              {% for r in reviews %}
+                <div class="card" style="padding: 10px; margin-bottom: 10px;">
+                  <div class="row">
+                    <strong>{{ r.username }}</strong>
+                    <span class="muted small">{{ r.created_at }}</span>
+                  </div>
+                  <div style="margin-top: 6px;">{{ r.review }}</div>
+                </div>
+              {% endfor %}
+            {% endif %}
+          </div>
+        </div>
+      </div>
+
+      <div class="section">
+        <div class="card">
+          <div class="row">
+            <strong>Book FAQ</strong>
+            <span class="muted small">Quick help</span>
+          </div>
+          <div style="margin-top: 10px;">
+            <div class="accordion">
+              <div class="acc-item open">
+                <button class="acc-head" type="button">How to issue this book?</button>
+                <div class="acc-body">
+                  If availability is <strong>Yes</strong>, click <strong>Issue Book</strong>. Return date is 7 days by default.
+                </div>
+              </div>
+              <div class="acc-item">
+                <button class="acc-head" type="button">What is the return policy?</button>
+                <div class="acc-body">
+                  Return within 7 days. If today is after the return date, it shows <strong>Late Return</strong>.
+                </div>
+              </div>
+              <div class="acc-item">
+                <button class="acc-head" type="button">How does "View Summary" work?</button>
+                <div class="acc-body">
+                  Summary is stored in the database. Click <strong>View Summary</strong> to open it in a popup.
+                </div>
+              </div>
+              <div class="acc-item">
+                <button class="acc-head" type="button">How to add a review?</button>
+                <div class="acc-body">
+                  Type a short review (1–2 lines) and click <strong>Add Review</strong>. It appears below.
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="footer">
+        Smart Library System | Student Project
+      </div>
+    </div>
+
+    <div id="summaryModal" class="modal">
+      <div class="modal-box modal-card">
+        <div class="row">
+          <strong>Book Summary</strong>
+          <button id="summaryClose" class="btn light" type="button">Close</button>
+        </div>
+        <div id="summaryContent" style="margin-top: 10px; color: #374151;"></div>
+      </div>
+    </div>
+  </body>
+</html>
+

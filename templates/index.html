@@ -1,0 +1,111 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Smart Library</title>
+    <link rel="stylesheet" href="/static/css/style.css" />
+    <script src="/static/js/script.js" defer></script>
+  </head>
+  <body>
+    <div class="navbar">
+      <div class="nav-left">
+        <div class="brand">Smart Library</div>
+      </div>
+      <div class="nav-right">
+        <a class="btn light" href="/login">Login</a>
+        <a class="btn primary" href="/signup">Signup</a>
+      </div>
+    </div>
+
+    <div class="container">
+      <div class="hero">
+        <div>
+          <div class="hero-badge">Simple • Smart • Student Project</div>
+          <h1 class="hero-title">Welcome to Smart Library</h1>
+          <p class="hero-sub">
+            Browse books, issue/return with a 7-day deadline, add reviews, view summaries, and use a simple FAQ chatbot.
+          </p>
+          <div style="display:flex; gap:10px; flex-wrap:wrap; margin-top:12px;">
+            <a class="btn primary" href="/login">Login</a>
+            <a class="btn light" href="/signup">Create Account</a>
+          </div>
+        </div>
+        <div class="hero-card">
+          <div style="font-weight:800; font-size:16px;">What you can do</div>
+          <ul class="hero-list">
+            <li>Search and filter books</li>
+            <li>Issue and return books (7 days)</li>
+            <li>See Late Return status</li>
+            <li>Top issued books + analytics (Admin)</li>
+            <li>Reviews + Summary (stored in DB)</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="section">
+        <div class="card">
+          <div class="row">
+            <div>
+              <strong>Categories</strong>
+              <div class="muted">Explore by category</div>
+            </div>
+            <a class="btn light" href="/login">Login to browse</a>
+          </div>
+          <div style="margin-top: 10px; display: flex; flex-wrap: wrap; gap: 8px;">
+            {% for c in categories %}
+              <span class="pill">{{ c }}</span>
+            {% endfor %}
+          </div>
+        </div>
+      </div>
+
+      <div class="section">
+        <div class="card">
+          <div class="row">
+            <div>
+              <strong>Featured Books</strong>
+              <div class="muted">Popular and recently added</div>
+            </div>
+            <a class="btn primary" href="/login">Login to browse</a>
+          </div>
+          <div class="grid grid-big" style="margin-top: 12px;">
+            {% for b in featured %}
+              <div class="card lift" style="padding: 14px;">
+                <div class="book-card">
+                  <img class="book-cover" src="{{ b.cover_image }}" alt="cover" />
+                  <div>
+                    <p class="book-title">{{ b.title }}</p>
+                    <p class="muted">{{ b.author }}</p>
+                    <p class="muted">{{ b.category }}</p>
+                    <span class="pill">Issued: {{ b.issue_count }}</span>
+                  </div>
+                </div>
+                <div style="margin-top: 10px;">
+                  <a class="btn light" href="/login">Login to view</a>
+                </div>
+              </div>
+            {% endfor %}
+          </div>
+        </div>
+      </div>
+
+      <div class="section">
+        <div class="card">
+          <strong>FAQ Chatbot (Demo)</strong>
+          <div class="muted">Try: "How to issue book?" or "Return policy?"</div>
+          <div id="chatLog" class="chat-log" style="margin-top: 10px;"></div>
+          <div class="chatbox">
+            <input id="chatInput" placeholder="Ask a question..." />
+            <button id="chatSend" class="btn primary" type="button">Send</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="footer">
+        Smart Library System | Student Project
+      </div>
+    </div>
+  </body>
+</html>
+

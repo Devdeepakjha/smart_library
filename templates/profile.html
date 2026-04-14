@@ -1,0 +1,139 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Profile - Smart Library</title>
+    <link rel="stylesheet" href="/static/css/style.css" />
+    <script src="/static/js/script.js" defer></script>
+  </head>
+  <body>
+    <div class="navbar">
+      <div class="nav-left">
+        <div class="brand">Smart Library</div>
+        <div class="nav-links">
+          <a href="/dashboard" class="{% if request.path.startswith('/dashboard') %}active{% endif %}">Dashboard</a>
+          <a href="/books" class="{% if request.path.startswith('/books') or request.path.startswith('/book') %}active{% endif %}">Books</a>
+          <a href="/profile" class="{% if request.path.startswith('/profile') %}active{% endif %}">Profile</a>
+          {% if session.role == "Admin" %}
+          <a href="/admin" class="{% if request.path.startswith('/admin') %}active{% endif %}">Admin</a>
+          {% endif %}
+        </div>
+      </div>
+      <div class="nav-right">
+        <div class="small"><strong>{{ session.username }}</strong></div>
+        <a class="btn light" href="/logout">Logout</a>
+      </div>
+    </div>
+
+    <div class="container">
+      {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        {% set cat = messages[0][0] %}
+        {% set msg = messages[0][1] %}
+        <div class="alert {{ cat }}"><strong>{{ msg }}</strong></div>
+      {% endif %}
+      {% endwith %}
+
+      <h2 class="title">Profile</h2>
+
+      <div class="card user-card lift">
+        <div class="row">
+          <div>
+            <div class="muted">Logged in as</div>
+            <div style="font-size: 20px; font-weight: 800;">{{ session.username }}</div>
+            <div class="muted">Role: {{ session.role }}</div>
+          </div>
+          <div style="display:flex; gap:10px; flex-wrap:wrap;">
+            <a class="btn primary" href="/books">Browse & Issue</a>
+            {% if session.role == "Admin" %}
+              <a class="btn light" href="/admin">Admin Panel</a>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+
+      <div class="section">
+        <div class="card">
+          <div class="row">
+            <strong>Active Issued Books</strong>
+            <span class="muted small">Late Return shown if deadline crossed</span>
+          </div>
+
+          {% if active|length == 0 %}
+            <p class="muted" style="margin-top: 10px;">No active issued books.</p>
+          {% else %}
+            <div class="active-grid">
+              {% for x in active %}
+                <div class="card lift active-book">
+                  <div class="book-card">
+                    <div class="cover-placeholder" aria-hidden="true">BOOK</div>
+                    <div>
+                      <div class="book-title"><a href="/book/{{ x.book_id }}">{{ x.title }}</a></div>
+                      <div class="muted">{{ x.author }}</div>
+                      <div class="active-meta">
+                        <span class="pill">Issued: {{ x.issue_date }}</span>
+                        {% if today > x.return_date %}
+                          <span class="deadline late">Due: {{ x.return_date }}</span>
+                          <span class="pill bad">Late</span>
+                        {% else %}
+                          <span class="deadline ok">Due: {{ x.return_date }}</span>
+                          <span class="pill good">On Time</span>
+                        {% endif %}
+                      </div>
+                    </div>
+                  </div>
+                  <div class="book-actions">
+                    <a class="btn light" href="/book/{{ x.book_id }}">View</a>
+                    <form method="post" action="/return/{{ x.book_id }}">
+                      <button class="btn danger" type="submit">Return</button>
+                    </form>
+                  </div>
+                </div>
+              {% endfor %}
+            </div>
+          {% endif %}
+        </div>
+      </div>
+
+      <div class="section">
+        <div class="card">
+          <div class="row">
+            <strong>Issue History</strong>
+            <span class="muted small">Returned books</span>
+          </div>
+
+          {% if history|length == 0 %}
+            <p class="muted" style="margin-top: 10px;">No history yet.</p>
+          {% else %}
+            <table class="table" style="margin-top: 10px;">
+              <thead>
+                <tr>
+                  <th>Book</th>
+                  <th>Issue Date</th>
+                  <th>Deadline</th>
+                  <th>Returned On</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for x in history %}
+                <tr>
+                  <td><a href="/book/{{ x.book_id }}"><strong>{{ x.title }}</strong></a><div class="muted">{{ x.author }}</div></td>
+                  <td>{{ x.issue_date }}</td>
+                  <td>{{ x.return_date }}</td>
+                  <td>{{ x.returned_on }}</td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          {% endif %}
+        </div>
+      </div>
+
+      <div class="footer">
+        Smart Library System | Student Project
+      </div>
+    </div>
+  </body>
+</html>
+

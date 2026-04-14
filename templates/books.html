@@ -1,0 +1,194 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Books - Smart Library</title>
+    <link rel="stylesheet" href="/static/css/style.css" />
+    <script src="/static/js/script.js" defer></script>
+  </head>
+  <body>
+    <div class="navbar">
+      <div class="nav-left">
+        <div class="brand">Smart Library</div>
+        <div class="nav-links">
+          <a href="/dashboard" class="{% if request.path.startswith('/dashboard') %}active{% endif %}">Dashboard</a>
+          <a href="/books" class="{% if request.path.startswith('/books') or request.path.startswith('/book') %}active{% endif %}">Books</a>
+          <a href="/profile" class="{% if request.path.startswith('/profile') %}active{% endif %}">Profile</a>
+          {% if session.role == "Admin" %}
+          <a href="/admin" class="{% if request.path.startswith('/admin') %}active{% endif %}">Admin</a>
+          {% endif %}
+        </div>
+      </div>
+      <div class="nav-right">
+        <div class="small"><strong>{{ session.username }}</strong></div>
+        <a class="btn light" href="/logout">Logout</a>
+      </div>
+    </div>
+
+    <div class="container">
+      {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        {% set cat = messages[0][0] %}
+        {% set msg = messages[0][1] %}
+        <div class="alert {{ cat }}"><strong>{{ msg }}</strong></div>
+      {% endif %}
+      {% endwith %}
+
+      <h2 class="title">Books</h2>
+
+      <div class="card" style="margin-bottom: 14px;">
+        <div class="row">
+          <div>
+            <strong>Quick Categories</strong>
+            <div class="muted">One click search</div>
+          </div>
+        </div>
+        <div style="margin-top: 10px; display:flex; gap:10px; flex-wrap:wrap;">
+          <a class="pill" href="/books?q=Manga">Manga</a>
+          <a class="pill" href="/books?q=Romance">Romance</a>
+          <a class="pill" href="/books?q=CSE">CSE</a>
+          <a class="pill" href="/books?q=Science">Science</a>
+          <a class="pill" href="/books?q=Self-Help">Self-Help</a>
+        </div>
+      </div>
+
+      <div class="card">
+        <form method="get" action="/books">
+          <div class="form-row">
+            <div class="form-group">
+              <label class="small">Smart Search</label>
+              <input name="q" value="{{ q }}" placeholder="Search by title, author, or category..." style="padding: 14px 14px; font-size: 15px;" />
+              {% if recent_search %}
+                <div class="muted small" style="margin-top: 6px;">Recent Search: <strong>{{ recent_search }}</strong></div>
+              {% endif %}
+            </div>
+            <div class="form-group">
+              <label class="small">Category</label>
+              <select name="category">
+                <option value="">All</option>
+                {% for c in categories %}
+                  <option value="{{ c }}" {% if c == category %}selected{% endif %}>{{ c }}</option>
+                {% endfor %}
+              </select>
+            </div>
+          </div>
+          <button class="btn primary" type="submit">Apply</button>
+          <a class="btn light" href="/books" style="margin-left: 8px;">Clear</a>
+        </form>
+      </div>
+
+      {% if q == "" and category == "" %}
+      <div class="section">
+        <div class="card">
+          <strong>Suggestions</strong>
+          <div class="muted" style="margin-top: 6px;">
+            Try: <strong>Manga</strong>, <strong>Science</strong>, <strong>Atomic Habits</strong>, <strong>Orwell</strong>, <strong>Romance</strong>
+          </div>
+          <div class="muted" style="margin-top: 6px;">
+            Popular categories: Manga, Romance, CSE, Science, Self-Help, Fantasy
+          </div>
+        </div>
+      </div>
+      {% endif %}
+
+      <div class="section">
+        <div class="card">
+          <div class="row">
+            <div>
+              <strong>Recommended Books</strong>
+              <div class="muted">Top issued / trending</div>
+            </div>
+          </div>
+          <div class="grid grid-books" style="margin-top: 12px;">
+            {% for b in recommended %}
+              <div class="card lift">
+                <div class="book-card">
+                  <img class="book-cover" src="{{ b.cover_image }}" alt="cover" />
+                  <div>
+                    <p class="book-title">{{ b.title }}</p>
+                    <p class="muted">{{ b.author }}</p>
+                    <p class="muted">{{ b.category }}</p>
+                  </div>
+                </div>
+                <div class="book-actions">
+                  <a class="btn light" href="/book/{{ b.book_id }}">View Details</a>
+                  <span class="pill">Issued: {{ b.issue_count }}</span>
+                </div>
+              </div>
+            {% endfor %}
+          </div>
+        </div>
+      </div>
+
+      <div class="section">
+        <div class="grid grid-books">
+          {% for b in books %}
+            <div class="card lift">
+              <div class="book-card">
+                <img class="book-cover" src="{{ b.cover_image }}" alt="cover" />
+                <div>
+                  <p class="book-title">{{ b.title }}</p>
+                  <p class="muted">{{ b.author }}</p>
+                  <p class="muted">{{ b.category }}</p>
+                  {% if b.availability == "Yes" %}
+                    <span class="pill good">Available</span>
+                  {% else %}
+                    <span class="pill bad">Issued</span>
+                  {% endif %}
+                </div>
+              </div>
+              <div class="book-actions">
+                <a class="btn light" href="/book/{{ b.book_id }}">View Details</a>
+                {% if b.availability == "Yes" %}
+                  <span class="muted small">Ready to issue</span>
+                {% else %}
+                  <span class="muted small">Currently issued</span>
+                {% endif %}
+              </div>
+            </div>
+          {% endfor %}
+        </div>
+
+        {% if books|length == 0 %}
+          <div class="card" style="margin-top: 14px;">
+            <strong>No books found 😕</strong>
+            <div class="muted" style="margin-top: 6px;">
+              Try searching by <strong>author</strong> or <strong>category</strong>. Example: "Orwell", "Manga", "Science".
+            </div>
+          </div>
+
+          {% if random_books|length > 0 %}
+          <div class="section">
+            <div class="card">
+              <strong>Try These Books</strong>
+              <div class="grid grid-books" style="margin-top: 12px;">
+                {% for b in random_books %}
+                  <div class="card lift">
+                    <div class="book-card">
+                      <img class="book-cover" src="{{ b.cover_image }}" alt="cover" />
+                      <div>
+                        <p class="book-title">{{ b.title }}</p>
+                        <p class="muted">{{ b.author }}</p>
+                        <p class="muted">{{ b.category }}</p>
+                      </div>
+                    </div>
+                    <div class="book-actions">
+                      <a class="btn light" href="/book/{{ b.book_id }}">View Details</a>
+                    </div>
+                  </div>
+                {% endfor %}
+              </div>
+            </div>
+          </div>
+          {% endif %}
+        {% endif %}
+      </div>
+
+      <div class="footer">
+        Smart Library System | Student Project
+      </div>
+    </div>
+  </body>
+</html>
+
